@@ -1,0 +1,15 @@
+# build artifacts
+output/
+*.iso
+*.qcow2
+*.raw
+*.vmdk
+*.tar
+
+# podman/build cache
+*.tmp
+*.lock
+
+# editor/OS junk files
+.DS_Store
+*.swp
