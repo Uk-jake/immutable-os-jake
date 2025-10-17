@@ -1,6 +1,6 @@
 ARG BASE=quay.io/fedora/fedora-bootc:42
 
-# 베이스 이미지 선택
+# 베이스 이미지 선택.
 FROM ${BASE}
 
 # "부팅 가능한 컨테이너" 라는 표시
