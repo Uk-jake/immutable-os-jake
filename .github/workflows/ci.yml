@@ -5,7 +5,7 @@ on:
     paths:
       - "Containerfile"
       - "config.toml"
-      - ".github/workflows/ci-podman.yml"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
 
 env:
@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, linux, build]
+    runs-on: [self-hosted, Linux, X64]
 
     steps:
       - name: Checkout
