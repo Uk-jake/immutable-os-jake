@@ -29,16 +29,3 @@ jobs:
         run: |
           podman build -f ./Containerfile -t "$IMAGE" --pull=always .
           podman push "$IMAGE"
-
-      - name: Run bootc-image-builder (config.toml → ./output)
-        run: |
-          mkdir -p ./output
-          sudo -n podman run --rm \
-            --privileged \
-            --pull=always \
-            --security-opt label=type:unconfined_t \
-            -v /var/lib/containers/storage:/var/lib/containers/storage \
-            -v "$PWD/output:/output" \
-            -v "$PWD/config.toml:/config.toml:ro" \
-            quay.io/centos-bootc/bootc-image-builder:latest \
-            --config /config.toml
