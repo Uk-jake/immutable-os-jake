@@ -33,7 +33,7 @@ jobs:
       - name: Run bootc-image-builder (config.toml → ./output)
         run: |
           mkdir -p ./output
-          sudo podman run --rm \
+          sudo -n podman run --rm \
             --privileged \
             --pull=always \
             --security-opt label=type:unconfined_t \
