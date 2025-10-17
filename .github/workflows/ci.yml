@@ -1,58 +1,44 @@
-name: CI - Build & Push to Quay
+name: CI (self-hosted) - Podman build & bootc
 
 on:
   push:
     paths:
       - "Containerfile"
-      - ".github/workflows/ci.yml"
+      - "config.toml"
+      - ".github/workflows/ci-podman.yml"
   workflow_dispatch:
 
 env:
-  REGISTRY: quay.io
-  IMAGE_NS: mag0225
-  IMAGE_NAME: jake-fedora-bootc
-  TAG_MAIN: latest
+  IMAGE: quay.io/mag0225/jake-fedora-bootc:latest
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: [self-hosted, linux, build]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Quay
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-
-      - name: Compute tag
-        id: meta
+      - name: Login to Quay (podman)
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            TAG="${{ env.TAG_MAIN }}"
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG="${{ github.ref_name }}"
-          else
-            TAG="$(echo "${{ github.ref_name }}" | tr '/' '-')"
-          fi
-          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NS }}/${{ env.IMAGE_NAME }}:${TAG}" >> $GITHUB_OUTPUT
+          podman login quay.io \
+            -u "${{ secrets.QUAY_USERNAME }}" \
+            -p "${{ secrets.QUAY_PASSWORD }}"
 
-      - name: Build and Push (root Containerfile)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Containerfile
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.meta.outputs.image }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Podman build & push
+        run: |
+          podman build -f ./Containerfile -t "$IMAGE" --pull=always .
+          podman push "$IMAGE"
 
-      - name: Show pushed image
-        run: echo "Pushed ${{ steps.meta.outputs.image }}"
+      - name: Run bootc-image-builder (config.toml → ./output)
+        run: |
+          mkdir -p ./output
+          sudo podman run --rm \
+            --privileged \
+            --pull=always \
+            --security-opt label=type:unconfined_t \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v "$PWD/output:/output" \
+            -v "$PWD/config.toml:/config.toml:ro" \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --config /config.toml
